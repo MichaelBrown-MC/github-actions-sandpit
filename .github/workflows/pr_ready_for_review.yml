@@ -79,80 +79,50 @@ jobs:
           echo "🌿 Branch: $BRANCH_NAME"
           echo "🧩 Work Item ID: $WORK_ITEM_ID"
           echo "🔗 Work Item URL: $WORK_ITEM_URL"
-
-          CARD=$(jq -n \
-            --arg pr_url "$PR_URL" \
-            --arg branch "$BRANCH_NAME" \
-            --arg work_item_id "$WORK_ITEM_ID" \
-            --arg work_item_url "$WORK_ITEM_URL" \
-            '{
-              "type": "message",
-              "attachments": [
-                {
-                  "contentType": "application/vnd.microsoft.card.adaptive",
-                  "contentUrl": null,
-                  "content": {
-                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                    "type": "AdaptiveCard",
-                    "version": "1.5",
-                    "speak": "Version 2.2 performance optimization",
-                    "body": [
-                      {
-                        "size": "Medium",
-                        "weight": "Bolder",
-                        "text": $branch
-                      },
-                      {
-                        "type": "TextBlock",
-                        "text": "Pull Request is ready for Code Review",
-                        "wrap": true
-                      }
-                    ],
-                    "actions": [
-                      {
-                        "type": "Action.OpenUrl",
-                        "title": "View Pull Request",
-                        "url": $pr_url
-                      },
-                      {
-                        "type": "Action.OpenUrl",
-                        "title": "View User Story #\($work_item_id)",
-                        "url": $work_item_url
-                      }
-                    ]
-                  }
-                }
-              ]
-            }')
-
-
-          echo "$CARD" | jq .
-
-          echo "📤 Sending Adaptive Card to Teams..."
-          curl -X POST "$TEAMS_WEBHOOK_URL" \
-          -H "Content-Type: application/json" \
-          -d '{
+          
+          CARD=$(cat <<EOF
+          {
             "type": "message",
             "attachments": [
               {
                 "contentType": "application/vnd.microsoft.card.adaptive",
                 "content": {
-                  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                  "\$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
                   "type": "AdaptiveCard",
                   "version": "1.5",
                   "body": [
                     {
                       "type": "TextBlock",
-                      "text": "Test message"
+                      "text": "$BRANCH_NAME"
+                    },
+                    {
+                      "type": "TextBlock",
+                      "text": "Pull Request is ready for Code Review",
+                      "wrap": true
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "Action.OpenUrl",
+                      "title": "View Pull Request",
+                      "url": "$PR_URL"
+                    },
+                    {
+                      "type": "Action.OpenUrl",
+                      "title": "View User Story #$WORK_ITEM_ID",
+                      "url": "$WORK_ITEM_URL"
                     }
                   ]
                 }
               }
             ]
-          }'
-
+          }
+          EOF
+          )
+          
+          curl -X POST "$TEAMS_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$CARD"
 
           echo "✅ Teams notification sent."
-
-
 
