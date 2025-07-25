@@ -49,10 +49,10 @@ jobs:
         
           BRANCH_NAME="${{ steps.extract.outputs.branch }}"
           PR_URL="${{ steps.create_pr.outputs.pr_url }}"
-          COMMENT_TEXT="**DigitalTeam Bot** 🤖\n\n- Branch \`$BRANCH_NAME\` was created in GitHub.\n- [View Draft Pull Request]($PR_URL)"
+          COMMENT_HTML="<strong>DigitalTeam Bot 🤖</strong><br><br>- Branch <code>$BRANCH_NAME</code> was created in GitHub.<br>- <a href=\"$PR_URL\">View Draft Pull Request</a>"
 
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
             -H "Content-Type: application/json" \
-            -d "$(jq -n --arg text "$COMMENT_TEXT" '{text: $text}')" \
-            "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workItems/${{ steps.extract.outputs.work_item_id }}/comments?format=markdown&api-version=7.1-preview.3"
+            -d "$(jq -n --arg text "$COMMENT_HTML" '{text: $text}')" \
+            "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workItems/${{ steps.extract.outputs.work_item_id }}/comments?api-version=7.1-preview.3"
