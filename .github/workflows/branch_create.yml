@@ -27,6 +27,8 @@ jobs:
         run: |
           echo "actor=${{ github.actor }}" >> $GITHUB_OUTPUT
 
+      - name: Fetch remote branches
+        run: git fetch origin
 
       - name: Check if branch has commits ahead of main
         id: check_commits
