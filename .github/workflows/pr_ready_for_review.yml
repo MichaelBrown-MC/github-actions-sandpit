@@ -47,3 +47,60 @@ jobs:
             -H "Content-Type: application/json" \
             -d "$(jq -n --arg text "$COMMENT_HTML" '{text: $text}')" \
             "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workItems/$WORK_ITEM_ID/comments?api-version=7.1-preview.3"
+
+
+      - name: Notify Teams with Adaptive Card
+        if: steps.extract.outputs.work_item_id != ''
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+        run: |
+          PR_URL="${{ steps.extract.outputs.pr_url }}"
+          BRANCH_NAME="${{ steps.extract.outputs.branch }}"
+          WORK_ITEM_ID="${{ steps.extract.outputs.work_item_id }}"
+          ORG="${{ vars.AZURE_DEVOPS_ORG }}"
+          PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
+          WORK_ITEM_URL="https://dev.azure.com/$ORG/$PROJECT/_workitems/edit/$WORK_ITEM_ID"
+
+          CARD=$(cat <<EOF
+          {
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "summary": "PR Ready for Code Review",
+            "themeColor": "0076D7",
+            "title": "PR Ready for Code Review",
+            "sections": [
+              {
+               "activityTitle": "**[View Pull Request**",
+                "activitySubtitle": "Branch: \`$BRANCH_NAME\`",
+                "markdown": true
+              },
+              {
+                "activityTitle": "**[ViewWork Item #$WORK_ITEM_ID**",
+                "markdown": true
+              }
+            ],
+            "potentialAction": [
+              {
+                "@type": "OpenUri",
+                "name": "Review PR",
+                "targets": [
+                  { "os": "default", "uri": "$PR_URL" }
+                ]
+              },
+              {
+                "@type": "OpenUri",
+                "name": "View Work Item",
+                "targets": [
+                  { "os": "default", "uri": "$WORK_ITEM_URL" }
+                ]
+              }
+            ]
+          }
+          EOF
+          )
+
+          curl -H "Content-Type: application/json" \
+               -d "$CARD" \
+               "$TEAMS_WEBHOOK_URL"
+
+
