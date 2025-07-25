@@ -126,10 +126,31 @@ jobs:
             }')
 
 
+          echo "$CARD" | jq .
+
           echo "📤 Sending Adaptive Card to Teams..."
-          curl -H "Content-Type: application/json" \
-               -d "$CARD" \
-               "$TEAMS_WEBHOOK_URL"
+          curl -X POST "$TEAMS_WEBHOOK_URL" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "type": "message",
+            "attachments": [
+              {
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "content": {
+                  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                  "type": "AdaptiveCard",
+                  "version": "1.5",
+                  "body": [
+                    {
+                      "type": "TextBlock",
+                      "text": "Test message"
+                    }
+                  ]
+                }
+              }
+            ]
+          }'
+
 
           echo "✅ Teams notification sent."
 
