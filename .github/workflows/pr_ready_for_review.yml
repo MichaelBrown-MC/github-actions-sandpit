@@ -101,7 +101,7 @@ jobs:
                   },
                   {
                       "type": "TextBlock",
-                      "text": "Pull Request is ready for Code Review"
+                      "text": "Pull Request is ready for Code Review",
                       "wrap": true
                   }
               ],
