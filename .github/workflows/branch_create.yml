@@ -21,6 +21,11 @@ jobs:
           WORK_ITEM_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+' | head -n 1)
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
+      
+      - name: Capture GitHub actor (branch creator)
+        id: actor
+        run: |
+          echo "actor=${{ github.actor }}" >> $GITHUB_OUTPUT
 
       - name: Create draft PR
         id: create_pr
@@ -46,10 +51,10 @@ jobs:
         env:
           AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
         run: |
-        
+          ACTOR="${{ steps.actor.outputs.actor }}"
           BRANCH_NAME="${{ steps.extract.outputs.branch }}"
           PR_URL="${{ steps.create_pr.outputs.pr_url }}"
-          COMMENT_HTML="<strong>DigitalTeam Bot 🤖</strong><br><br>- Branch <code>$BRANCH_NAME</code> was created in GitHub.<br>- <a href=\"$PR_URL\">View Draft Pull Request</a>"
+          COMMENT_HTML="<strong>DigitalTeam Bot 🤖</strong><br><ul><li>Branch <code>$BRANCH_NAME</code> was created by $ACTOR.</li><li><a href=\"$PR_URL\">View Draft Pull Request</a></li></ul>"
 
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
