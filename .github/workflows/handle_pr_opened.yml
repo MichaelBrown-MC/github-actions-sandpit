@@ -33,9 +33,17 @@ jobs:
           PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
 
           # Set work item state to 'Ready for Code Review'
-          PATCH_DATA=$(jq -n '[{ "op": "add", "path": "/fields/System.State", "value": "Ready for Code Review" }]')
-          curl -X PATCH -u ":$AZURE_DEVOPS_PAT" -H "Content-Type: application/json-patch+json" -d "$PATCH_DATA""https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
+          PATCH_DATA=$(jq -n '[{ "op": "add", "path": "/fields/System.State", "value": "Ready for Code Review" }]')          
+          curl -X PATCH \
+            -u ":$AZURE_DEVOPS_PAT" \
+            -H "Content-Type: application/json-patch+json" \
+            -d "$PATCH_DATA" \
+            "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
 
           # Add comment with PR link
           COMMENT_HTML="PR Ready for Code review: <a href=\"$PR_URL\">$PR_URL</a><br/><br/><small>- Comment created by GitHub Action 🤖</small>"
-          curl -X POST -u ":$AZURE_DEVOPS_PAT" -H "Content-Type: application/json"-d "$(jq -n --arg text "$COMMENT_HTML" '{text: $text}')" "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workItems/$WORK_ITEM_ID/comments?api-version=7.1-preview.3"
+          curl -X POST \
+            -u ":$AZURE_DEVOPS_PAT" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg text "$COMMENT_HTML" '{text: $text}')" \
+            "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workItems/$WORK_ITEM_ID/comments?api-version=7.1-preview.3"
