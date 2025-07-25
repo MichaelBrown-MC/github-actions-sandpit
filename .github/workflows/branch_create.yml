@@ -45,10 +45,19 @@ jobs:
 
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
 
+      
       - name: Add comment to Azure DevOps work item with PR link
         if: steps.extract.outputs.work_item_id != ''
+        env:
+          AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
         run: |
-          COMMENT_TEXT="**DigitalTeam Bot** 🤖\n\n- Branch \`${{ steps.extract.outputs.branch }}\` was created in GitHub.\n- View [Draft Pull Request](${{ steps.create_pr.outputs          -u :${{ secrets.AZURE_DEVOPS_PAT }} \
+        
+          BRANCH_NAME="${{ steps.extract.outputs.branch }}"
+          PR_URL="${{ steps.create_pr.outputs.pr_url }}"
+          COMMENT_TEXT="**DigitalTeam Bot** 🤖\n\n- Branch \`$BRANCH_NAME\` was created in GitHub.\n- [View Draft Pull Request]($PR_URL)"
+
+          curl -X POST \
+            -u ":$AZURE_DEVOPS_PAT" \
             -H "Content-Type: application/json" \
             -d "$(jq -n --arg text "$COMMENT_TEXT" '{text: $text}')" \
             "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workItems/${{ steps.extract.outputs.work_item_id }}/comments?api-version=7.1-preview.3"
