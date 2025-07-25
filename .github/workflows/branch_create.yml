@@ -27,8 +27,17 @@ jobs:
         run: |
           echo "actor=${{ github.actor }}" >> $GITHUB_OUTPUT
 
+
+      - name: Check if branch has commits ahead of main
+        id: check_commits
+        run: |
+          COMMITS_AHEAD=$(git rev-list --count origin/main..HEAD)
+          echo "Commits ahead: $COMMITS_AHEAD"
+          echo "commits_ahead=$COMMITS_AHEAD" >> $GITHUB_OUTPUT
+
       - name: Create draft PR
         id: create_pr
+        if: steps.check_commits.outputs.commits_ahead != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -45,6 +54,10 @@ jobs:
 
           PR_URL=$(gh pr view "$BRANCH_NAME" --json url --jq .url)
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+          
+      - name: Log no commits message
+        if: steps.check_commits.outputs.commits_ahead == '0'
+        run: echo "No commits between main and ${{ steps.extract.outputs.branch }}. Skipping PR creation."
       
       - name: Add comment to Azure DevOps work item with PR link
         if: steps.extract.outputs.work_item_id != ''
@@ -54,7 +67,7 @@ jobs:
           ACTOR="${{ steps.actor.outputs.actor }}"
           BRANCH_NAME="${{ steps.extract.outputs.branch }}"
           PR_URL="${{ steps.create_pr.outputs.pr_url }}"
-          COMMENT_HTML="<ul><li>Branch <code>$BRANCH_NAME</code> was created by <a href="https://github.com/$ACTOR">$ACTOR</a>.</li><li><a href=\"$PR_URL\">View Draft Pull Request</a></li></ul><p>Comment created by GitHub Action 🤖</p>"
+          COMMENT_HTML="<p>Branch <code>$BRANCH_NAME</code> was created by <a href="https://github.com/$ACTOR">$ACTOR</a>.</p><p><a href=\"$PR_URL\">View Draft Pull Request</a></p>><p>Comment created by GitHub Action 🤖</p>"
 
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
