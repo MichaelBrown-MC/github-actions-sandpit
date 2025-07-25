@@ -86,35 +86,41 @@ jobs:
           --arg work_item_id "$WORK_ITEM_ID" \
           --arg work_item_url "$WORK_ITEM_URL" \
           '{
-            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-            "type": "AdaptiveCard",
-            "version": "1.5",
-            "body": [
+            "attachments": [
               {
-                "size": "Medium",
-                "weight": "Bolder",
-                "text": $branch
-              },
-              {
-                "type": "TextBlock",
-                "text": "Pull Request is ready for Code Review",
-                "wrap": true
-              }
-            ],
-            "actions": [
-              {
-                "type": "Action.OpenUrl",
-                "title": "View Pull Request",
-                "url": $pr_url
-              },
-              {
-                "type": "Action.OpenUrl",
-                "title": "View User Story #\($work_item_id)",
-                "url": $work_item_url
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "content": {
+                  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                  "type": "AdaptiveCard",
+                  "version": "1.5",
+                  "body": [
+                    {
+                      "size": "Medium",
+                      "weight": "Bolder",
+                      "text": $branch
+                    },
+                    {
+                      "type": "TextBlock",
+                      "text": "Pull Request is ready for Code Review",
+                      "wrap": true
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "Action.OpenUrl",
+                      "title": "View Pull Request",
+                      "url": $pr_url
+                    },
+                    {
+                      "type": "Action.OpenUrl",
+                      "title": "View User Story #\($work_item_id)",
+                      "url": $work_item_url
+                    }
+                  ]
+                }
               }
             ]
           }')
-
 
           echo "📤 Sending Adaptive Card to Teams..."
           curl -H "Content-Type: application/json" \
