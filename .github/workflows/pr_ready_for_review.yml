@@ -22,8 +22,6 @@ jobs:
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
 
-            - name: Update Azure DevOps work item state and add PR comment
-
       - name: Update Azure DevOps work item state and add PR comment
         if: steps.extract.outputs.work_item_id != ''
         env:
