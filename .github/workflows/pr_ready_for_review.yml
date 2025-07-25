@@ -91,7 +91,7 @@ jobs:
               "summary": "PR Ready for Code Review",
               "themeColor": "0076D7",
               "title": "PR Ready for Code Review",
-              "sections": 
+              "sections": [
                 {
                   "activityTitle": "[View Pull Request]",
                   "activitySubtitle": "Branch: $branch",
