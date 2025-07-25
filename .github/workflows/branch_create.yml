@@ -1,0 +1,54 @@
+name: On Branch Creation - Comment Work Item & Create Draft PR
+
+on:
+  create
+
+jobs:
+  handle-branch-create:
+    if: github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Extract branch name and work item ID
+        id: extract
+        run: |
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          echo "Branch name: $BRANCH_NAME"
+          WORK_ITEM_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+' | head -n 1)
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
+
+      - name: Check for gh CLI
+        run: |
+          if ! command -v gh &> /dev/null; then
+            echo "gh CLI not found. Please install GitHub CLI."
+            exit 1
+          fi
+
+      - name: Create draft PR and capture URL
+        id: create_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH_NAME="${{ steps.extract.outputs.branch }}"
+          WORK_ITEM_ID="${{ steps.extract.outputs.work_item_id }}"
+          WORK_ITEM_URL="https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_workitems/edit/$WORK_ITEM_ID"
+
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --title "$BRANCH_NAME" \
+            --body "Linked Azure DevOps User Story: $WORK_ITEM_URL" \
+            --draft \
+            --json url \
+            --jq .url)
+
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+
+      - name: Add comment to Azure DevOps work item with PR link
+        if: steps.extract.outputs.work_item_id != ''
+        run: |
+          COMMENT_TEXT="**DigitalTeam Bot** 🤖\n\n- Branch \`${{ steps.extract.outputs.branch }}\` was created in GitHub.\n- View [Draft Pull Request](${{ steps.create_pr.outputs          -u :${{ secrets.AZURE_DEVOPS_PAT }} \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg text "$COMMENT_TEXT" '{text: $text}')" \
+            "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workItems/${{ steps.extract.outputs.work_item_id }}/comments?api-version=7.1-preview.3"
