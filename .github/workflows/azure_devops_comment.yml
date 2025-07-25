@@ -1,13 +1,11 @@
 name: Comment on Azure DevOps Work Item When Branch is Created
 
 on:
-  push:
-    branches:
-      - '**'
+  create
 
 jobs:
   comment-on-branch-create:
-    if: github.event.created == true && github.event.ref_type == 'branch'
+    if: github.event.ref_type == 'branch'
     runs-on: ubuntu-latest
 
     env:
@@ -22,7 +20,6 @@ jobs:
           BRANCH_NAME="${GITHUB_REF#refs/heads/}"
           echo "Branch name: $BRANCH_NAME"
           WORK_ITEM_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+' | head -n 1)
-          echo "Work item ID: $WORK_ITEM_ID"
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
 
@@ -32,5 +29,5 @@ jobs:
           curl -X POST \
             -u :$AZURE_DEVOPS_PAT \
             -H "Content-Type: application/json" \
-            -d "{\"text\": \"MikeBot - Branch '${{ steps.extract.outputs.branch }}' was created in GitHub.\"}" \
+            -d "{\"text\": \"Branch '${{ steps.extract.outputs.branch }}' was created in GitHub.\"}" \
             "https://dev.azure.com/$AZURE_DEVOPS_ORG/$AZURE_DEVOPS_PROJECT/_apis/wit/workItems/${{ steps.extract.outputs.work_item_id }}/comments?api-version=7.1-preview.3"
