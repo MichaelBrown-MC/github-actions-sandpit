@@ -27,13 +27,6 @@ jobs:
         run: |
           echo "actor=${{ github.actor }}" >> $GITHUB_OUTPUT
 
-      - name: Check if branch has commits ahead of main
-        id: check_commits
-        run: |
-          COMMITS_AHEAD=$(git rev-list --count origin/main..HEAD)
-          echo "Commits ahead: $COMMITS_AHEAD"
-          echo "commits_ahead=$COMMITS_AHEAD" >> $GITHUB_OUTPUT
-
       - name: Create draft PR
         id: create_pr
         env:
