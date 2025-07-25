@@ -9,6 +9,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Extract branch name and work item ID
         id: extract
         run: |
