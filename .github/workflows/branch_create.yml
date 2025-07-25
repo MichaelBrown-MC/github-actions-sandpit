@@ -18,14 +18,7 @@ jobs:
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
 
-      - name: Check for gh CLI
-        run: |
-          if ! command -v gh &> /dev/null; then
-            echo "gh CLI not found. Please install GitHub CLI."
-            exit 1
-          fi
-
-      - name: Create draft PR and capture URL
+      - name: Create draft PR
         id: create_pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -34,17 +27,15 @@ jobs:
           WORK_ITEM_ID="${{ steps.extract.outputs.work_item_id }}"
           WORK_ITEM_URL="https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_workitems/edit/$WORK_ITEM_ID"
 
-          PR_URL=$(gh pr create \
+          gh pr create \
             --base main \
             --head "$BRANCH_NAME" \
             --title "$BRANCH_NAME" \
             --body "Linked Azure DevOps User Story: $WORK_ITEM_URL" \
-            --draft \
-            --json url \
-            --jq .url)
+            --draft
 
+          PR_URL=$(gh pr view "$BRANCH_NAME" --json url --jq .url)
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
-
       
       - name: Add comment to Azure DevOps work item with PR link
         if: steps.extract.outputs.work_item_id != ''
