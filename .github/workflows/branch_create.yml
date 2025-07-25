@@ -55,4 +55,4 @@ jobs:
             -u ":$AZURE_DEVOPS_PAT" \
             -H "Content-Type: application/json" \
             -d "$(jq -n --arg text "$COMMENT_TEXT" '{text: $text}')" \
-            "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workItems/${{ steps.extract.outputs.work_item_id }}/comments?format=markdown?api-version=7.1-preview.3"
+            "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workItems/${{ steps.extract.outputs.work_item_id }}/comments?format=markdown&api-version=7.1-preview.3"
