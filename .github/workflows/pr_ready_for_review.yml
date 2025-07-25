@@ -86,6 +86,7 @@ jobs:
             --arg work_item_id "$WORK_ITEM_ID" \
             --arg work_item_url "$WORK_ITEM_URL" \
             '{
+              "type": "message",
               "attachments": [
                 {
                   "contentType": "application/vnd.microsoft.card.adaptive",
