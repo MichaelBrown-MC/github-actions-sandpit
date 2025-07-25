@@ -80,43 +80,41 @@ jobs:
           echo "🧩 Work Item ID: $WORK_ITEM_ID"
           echo "🔗 Work Item URL: $WORK_ITEM_URL"
 
-          CARD=$(cat <<EOF
-          {
-            "@type": "MessageCard",
-            "@context": "http://schema.org/extensions",
-            "summary": "PR Ready for Code Review",
-            "themeColor": "0076D7",
-            "title": "PR Ready for Code Review",
-            "sections": 
-              {
-                "activityTitle": "View Pull Request",
-                "activitySubtitle": "Branch: \`$BRANCH_NAME\`",
-                "markdown": true
-              },
-              {
-                "activityTitle": "[View Work Item #$WORK_ITEM_ID",
-                "markdown": true
-              }
-            ],
-            "potentialAction": [
-              {
-                "@type": "OpenUri",
-                "name": "Review PR",
-                "targets": [
-                  { "os": "default", "uri": "$PR_URL" }
-                ]
-              },
-              {
-                "@type": "OpenUri",
-                "name": "View Work Item",
-                "targets": [
-                  { "os": "default", "uri": "$WORK_ITEM_URL" }
-                ]
-              }
-            ]
-          }
-          EOF
-          )
+          CARD=$(jq -n \
+            --arg pr_url "$PR_URL" \
+            --arg branch "$BRANCH_NAME" \
+            --arg work_item_id "$WORK_ITEM_ID" \
+            --arg work_item_url "$WORK_ITEM_URL" \
+            '{
+              "@type": "MessageCard",
+              "@context": "http://schema.org/extensions",
+              "summary": "PR Ready for Code Review",
+              "themeColor": "0076D7",
+              "title": "🔔 PR Ready for Code Review",
+              "sections": 
+                {
+                  "activityTitle": "[View Pull Request",
+                  "activitySubtitle": "Branch: `" + $branch + "`",
+                  "markdown: true
+                },
+                {
+                  "activityTitle": "[View Work Item #" + $work_item_id + "",
+                  "markdown": true
+                }
+              ],
+              "potentialAction": [
+                {
+                  "@type": "OpenUri",
+                  "name": "Review PR",
+                  "targets": [ { "os": "default", "uri": $pr_url } ]
+                },
+                {
+                  "@type": "OpenUri",
+                  "name": "View Work Item",
+                  "targets": [ { "os": "default", "uri": $work_item_url } ]
+                }
+              ]
+            }')
 
           echo "📤 Sending Adaptive Card to Teams..."
           curl -H "Content-Type: application/json" \
@@ -124,4 +122,5 @@ jobs:
                "$TEAMS_WEBHOOK_URL"
 
           echo "✅ Teams notification sent."
+
 
