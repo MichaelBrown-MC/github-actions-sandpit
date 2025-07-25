@@ -54,5 +54,5 @@ jobs:
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
             -H "Content-Type: application/json" \
-            -d "$(jq -n --arg text "$COMMENT_TEXT" format "markdown" '{text: $text} '{text: $text, renderedText: null, textFormat: $format}')" \
+            -d "$(jq -n --arg text "$COMMENT_TEXT" --arg format "markdown" '{text: $text} '{text: $text, renderedText: null, textFormat: $format}')" \
             "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workItems/${{ steps.extract.outputs.work_item_id }}/comments?api-version=7.1-preview.3"
