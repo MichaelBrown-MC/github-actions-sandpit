@@ -86,33 +86,38 @@ jobs:
             --arg work_item_id "$WORK_ITEM_ID" \
             --arg work_item_url "$WORK_ITEM_URL" \
             '{
-              "@type": "MessageCard",
+              "@type": "AdaptiveCard",
               "@context": "http://schema.org/extensions",
-              "summary": "PR Ready for Code Review",
+              "summary": "Pull Request is ready for Code Review",
               "themeColor": "0076D7",
-              "title": "PR Ready for Code Review",
-              "sections": [
-                {
-                  "activityTitle": "[View Pull Request]",
-                  "activitySubtitle": "Branch: $branch",
-                  "markdown": true
-                },
-                {
-                  "activityTitle": "[View User Story] $work_item_id",
-                  "markdown": true
-                }
+              "title": "Pull Request is ready for Code Review",
+              "version": "1.5",
+              "body": [
+                  {
+                      "type": "TextBlock",
+                      "size": "Medium",
+                      "weight": "Bolder",
+                      "text": "${branch}",
+                  },
+                  {
+                      "type": "TextBlock",
+                      "text": "Pull Request is ready for Code Review"
+                      "wrap": true
+                  }
               ],
-              "potentialAction": [
-                {
-                  "@type": "OpenUri",
-                  "name": "View Pull Request",
-                  "targets": [ { "os": "default", "uri": $pr_url } ]
-                },
-                {
-                  "@type": "OpenUri",
-                  "name": "View User Story",
-                  "targets": [ { "os": "default", "uri": $work_item_url } ]
-                }
+              "actions": [
+                  {
+                      "type": "Action.OpenUrl",
+                      "title": "Pull Request",
+                      "url": "$pr_url",
+                      "style": "positive"
+                  },
+                  {
+                      "type": "Action.OpenUrl",
+                      "title": "User Story $work_item_id",
+                      "url": "$work_item_url",
+                      "style": "positive"
+                  }
               ]
             }')
 
