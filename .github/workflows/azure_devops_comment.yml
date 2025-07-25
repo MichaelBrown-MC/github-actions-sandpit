@@ -18,10 +18,18 @@ jobs:
         id: extract
         run: |
           BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-          echo "Branch name: $BRANCH_NAME"
           WORK_ITEM_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+' | head -n 1)
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
+
+      - name: Debug - Print URL and variables
+        run: |
+          echo "Branch Name: ${{ steps.extract.outputs.branch }}"
+          echo "Work Item ID: ${{ steps.extract.outputs.work_item_id }}"
+          echo "Org: $AZURE_DEVOPS_ORG"
+          echo "Project: $AZURE_DEVOPS_PROJECT"
+          echo "Constructed URL:"
+          echo "https://dev.azure.com/$AZURE_DEVOPS_ORG/$AZURE_DEVOPS_PROJECT/_apis/wit/workItems/${{ steps.extract.outputs.work_item_id }}/comments?api-version=7.1-preview.3"
 
       - name: Add comment to Azure DevOps work item
         if: steps.extract.outputs.work_item_id != ''
