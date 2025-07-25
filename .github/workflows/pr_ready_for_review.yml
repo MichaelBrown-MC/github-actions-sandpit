@@ -52,7 +52,7 @@ jobs:
       - name: Notify Teams with Adaptive Card
         if: steps.extract.outputs.work_item_id != ''
         env:
-          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.PULL_REQUESTS_TEAMS_WEBHOOK_URL }}
         run: |
           PR_URL="${{ steps.extract.outputs.pr_url }}"
           BRANCH_NAME="${{ steps.extract.outputs.branch }}"
