@@ -61,7 +61,7 @@ jobs:
             "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workItems/$WORK_ITEM_ID/comments?api-version=7.1-preview.3"
 
 
-            - name: Notify Teams with Adaptive Card
+      - name: Notify Teams with Adaptive Card
         if: steps.extract.outputs.work_item_id != ''
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.PULL_REQUESTS_TEAMS_WEBHOOK_URL }}
@@ -94,23 +94,23 @@ jobs:
               "sections": 
                 {
                   "activityTitle": "[View Pull Request]",
-                  "activitySubtitle": ("Branch: `" + $branch + "`"),
+                  "activitySubtitle": "Branch: $branch",
                   "markdown": true
                 },
                 {
-                  "activityTitle": ("[View User Story #" + $work_item_id + "]),
+                  "activityTitle": "[View User Story] $work_item_id",
                   "markdown": true
                 }
               ],
               "potentialAction": [
                 {
                   "@type": "OpenUri",
-                  "name": "Review PR",
+                  "name": "View Pull Request",
                   "targets": [ { "os": "default", "uri": $pr_url } ]
                 },
                 {
                   "@type": "OpenUri",
-                  "name": "View User Story Item",
+                  "name": "View User Story",
                   "targets": [ { "os": "default", "uri": $work_item_url } ]
                 }
               ]
