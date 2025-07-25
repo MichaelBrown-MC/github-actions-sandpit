@@ -97,7 +97,7 @@ jobs:
                       "type": "TextBlock",
                       "size": "Medium",
                       "weight": "Bolder",
-                      "text": "${branch}",
+                      "text": "$branch",
                   },
                   {
                       "type": "TextBlock",
@@ -114,7 +114,7 @@ jobs:
                   },
                   {
                       "type": "Action.OpenUrl",
-                      "title": "User Story $work_item_id",
+                      "title": "User Story #" + $work_item_id,
                       "url": "$work_item_url",
                       "style": "positive"
                   }
