@@ -1,4 +1,4 @@
-name: Handle PR Opened
+name: On PR set to Ready for Review
 
 on:
   pull_request:
