@@ -1,4 +1,4 @@
-name: On Branch Creation - Comment Work Item & Create Draft PR
+name: On Branch Creation
 
 on:
   create
