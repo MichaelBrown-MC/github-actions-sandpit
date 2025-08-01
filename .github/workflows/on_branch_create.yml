@@ -1,10 +1,10 @@
-name: On Branch Creation - Comment Work Item & Create Draft PR
+name: On Branch Creation
 
 on:
   create
 
 jobs:
-  handle-branch-create:
+  on-branch-create:
     if: github.event.ref_type == 'branch'
     runs-on: ubuntu-latest
 
