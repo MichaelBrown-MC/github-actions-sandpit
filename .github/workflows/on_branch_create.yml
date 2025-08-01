@@ -32,7 +32,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BRANCH_NAME="${{ steps.extract.outputs.branch }}"
+          BRANCH_NAME="${{ steps.extract.outputs.branch_name }}"
           WORK_ITEM_ID="${{ steps.extract.outputs.work_item_id }}"
           WORK_ITEM_URL="https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_workitems/edit/$WORK_ITEM_ID"
 
@@ -48,7 +48,7 @@ jobs:
           
       - name: Log no commits message
         if: steps.check_commits.outputs.commits_ahead == '0'
-        run: echo "No commits between main and ${{ steps.extract.outputs.branch }}. Skipping PR creation."
+        run: echo "No commits between main and ${{ steps.extract.outputs.branch_name }}. Skipping PR creation."
       
       - name: Add comment to Azure DevOps work item with PR link
         if: steps.extract.outputs.work_item_id != ''
