@@ -1,3 +1,4 @@
+
 name: On PR set to Ready for Review
 
 on:
@@ -23,28 +24,41 @@ jobs:
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "target_name=$TARGET_NAME" >> $GITHUB_OUTPUT
           echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
-          
-      - name: Extract Actor Info
+
+      - name: Extract actor info
         id: extract_actor
         run: |
-          ACTOR="${{ github.actor }}"
-          echo "Actor: $ACTOR"
-      
-          # Fetch user details from GitHub API
-          RESPONSE=$(curl -s https://api.github.com/users/$ACTOR)
-          ACTOR_AVATAR_URL=$(echo "$RESPONSE" | jq -r '.avatar_url')
-          ACTOR_NAME=$(echo "$RESPONSE" | jq -r '.name')
-      
-          # Fallback to login if name is null
+          ACTOR=$(jq -r '.login' actor.json)
+          ACTOR_AVATAR_URL=$(jq -r '.avatar_url' actor.json)
+          ACTOR_NAME=$(jq -r '.name' actor.json)
           if [ "$ACTOR_NAME" = "null" ]; then
             ACTOR_NAME="$ACTOR"
           fi
-      
           echo "actor_name=$ACTOR_NAME" >> $GITHUB_OUTPUT
           echo "actor_avatar_url=$ACTOR_AVATAR_URL" >> $GITHUB_OUTPUT
 
+      - name: Update work item state to 'Ready for Code Review'
+        if: steps.extract_PR.outputs.work_item_id != ''
+        env:
+          AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+        run: |
+          WORK_ITEM_ID="${{ steps.extract_PR.outputs.work_item_id }}"
+          ORG="${{ vars.AZURE_DEVOPS_ORG }}"
+          PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
+          CURRENT_STATE=$(curl -s -u ":$AZURE_DEVOPS_PAT" \
+            -H "Accept: application/json" \
+            "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3" \
+            | jq -r '.fields["System.State"]')
+          if [ "$CURRENT_STATE" != "Ready for Code Review" ]; then
+            PATCH_DATA=$(jq -n '[{ "op": "add", "path": "/fields/System.State", "value": "Ready for Code Review" }]')
+            curl -X PATCH \
+              -u ":$AZURE_DEVOPS_PAT" \
+              -H "Content-Type: application/json-patch+json" \
+              -d "$PATCH_DATA" \
+              "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
+          fi
 
-      - name: Update Azure DevOps work item state and add PR comment
+      - name: Add comment to work item
         if: steps.extract_PR.outputs.work_item_id != ''
         env:
           AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
@@ -53,28 +67,6 @@ jobs:
           PR_URL="${{ steps.extract_PR.outputs.pr_url }}"
           ORG="${{ vars.AZURE_DEVOPS_ORG }}"
           PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
-
-          # Get current state of the work item
-          CURRENT_STATE=$(curl -s -u ":$AZURE_DEVOPS_PAT" \
-            -H "Accept: application/json" \
-            "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3" \
-            | jq -r '.fields["System.State"]')
-
-          echo "Current state: $CURRENT_STATE"
-
-          if [ "$CURRENT_STATE" != "Ready for Code Review" ]; then
-            echo "Updating state to 'Ready for Code Review'..."
-            PATCH_DATA=$(jq -n '[{ "op": "add", "path": "/fields/System.State", "value": "Ready for Code Review" }]')          
-            curl -X PATCH \
-              -u ":$AZURE_DEVOPS_PAT" \
-              -H "Content-Type: application/json-patch+json" \
-              -d "$PATCH_DATA" \
-              "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
-          else
-            echo "Work item already in 'Ready for Code Review' state. Skipping update."
-          fi
-
-          # Add comment with PR link
           COMMENT_HTML="<ul><li>🔍 <a href=\"$PR_URL/files\">Pull Request</a> is Ready for Code Review.</li><li>User Story State set to '🔵 Ready for Code Review'.</li></ul><br/><small>- Comment created by GitHub Action 🤖</small>"
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
