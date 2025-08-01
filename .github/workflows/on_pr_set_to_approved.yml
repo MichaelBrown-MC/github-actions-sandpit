@@ -35,6 +35,7 @@ jobs:
           ORG="${{ vars.AZURE_DEVOPS_ORG }}"
           PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
           APPROVER_NAME="${{ steps.extract_PR.outputs.approver_name }}"
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
           
           # Get current state of the work item
           CURRENT_STATE=$(curl -s -u ":$AZURE_DEVOPS_PAT" \
@@ -66,7 +67,7 @@ jobs:
             "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
 
           # Add comment          
-          COMMENT_HTML="<ul><li>✅ Pull Request has been approved by <a href="https://github.com/$APPROVER_NAME">$APPROVER_NAME</a>.</li><li>User Story State set to '🟣 Ready for Testing'.</li><li>User Story Assignee has been unassigned.</li></ul><br><small>- Comment created by GitHub Action 🤖</small>"
+          COMMENT_HTML="<ul><li>✅ Pull Request has been approved by <a href="https://github.com/$APPROVER_NAME">$APPROVER_NAME</a>.</li><li>User Story State set to '🟣 Ready for Testing'.</li><li>User Story Assignee has been unassigned.</li><li>$BRANCH_NAME</li></ul><br><small>- Comment created by GitHub Action 🤖</small>"
           
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
