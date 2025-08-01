@@ -72,7 +72,17 @@ jobs:
 
           # Set the branch name in the work item
           echo "Setting branch name '$BRANCH_NAME' on work item $WORK_ITEM_ID..."
-          PATCH_BRANCH=$(jq -n --arg branch "$BRANCH_NAME" '[{ "op": "add", "path": "/fields/Custom.Branch", "value": $branch }]')
+          
+          PATCH_BRANCH=$(cat <<EOF
+          [
+            {
+              "op": "add",
+              "path": "/fields/Custom.Branch",
+              "value": "$BRANCH_NAME"
+            }
+          ]
+          EOF
+          )
           
           curl -X PATCH \
             -u ":$AZURE_DEVOPS_PAT" \
