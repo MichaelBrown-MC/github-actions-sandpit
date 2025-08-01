@@ -65,7 +65,7 @@ jobs:
             "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
 
           # Add comment          
-          COMMENT_HTML= "Pull Request has been approved by $APPROVER_NAME.<br/><br/>User Story state set to 'Ready for Testing'<br/><br/><small>- Comment created by GitHub Action 🤖</small>"
+          COMMENT_HTML="Pull Request has been approved by $APPROVER_NAME.<br/><br/>User Story state set to 'Ready for Testing'<br/><br/><small>- Comment created by GitHub Action 🤖</small>"
           
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
