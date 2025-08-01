@@ -18,6 +18,7 @@ jobs:
           PR_URL="${{ github.event.pull_request.html_url }}"
           BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
           WORK_ITEM_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+' | head -n 1)
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
@@ -95,12 +96,16 @@ jobs:
           echo "🔧 Preparing Teams notification..."
 
           PR_URL="${{ steps.extract_PR.outputs.pr_url }}"
-          BRANCH_NAME="${{ steps.extract_PR.outputs.branch }}"
+          REPO_NAME="${{ github.event.repository.name }}"
+          BRANCH_NAME="${{ steps.extract_PR.outputs.branch }}"         
+          TARGET_NAME="${{ steps.extract_PR.outputs.target_branch }}"
           WORK_ITEM_ID="${{ steps.extract_PR.outputs.work_item_id }}"
           GIF_URL= "${{ steps.GetGIF.outputs.GIF_URL }}"
-          ACTOR_NAME = "${{ steps.extract_actor.outputs.actor_name }}"
-          ACTOR_AVATAR_URK =  "${{ steps.extract_actor.outputs.actor_avatar_url }}"
-          REPO_NAME="${{ github.event.repository.name }}"
+          ACTOR_NAME ="${{ steps.extract_actor.outputs.actor_name }}"
+          ACTOR_AVATAR_URK ="${{ steps.extract_actor.outputs.actor_avatar_url }}"
+
+          BRANCH_URL="https://github.com/$REPO/tree/$BRANCH_NAME"
+          TARGET_BRANCH_URL="https://github.com/$REPO/tree/$TARGET_BRANCH"
           
           ORG="${{ vars.AZURE_DEVOPS_ORG }}"
           PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
@@ -157,9 +162,33 @@ jobs:
                                   "verticalContentAlignment": "Center",
                                   "items": [
                                       {
-                                          "type": "TextBlock",
-                                          "text": "$BRANCH_NAME",
-                                          "wrap": true
+                                      "type": "RichTextBlock",                            
+                                      "inlines": [
+                                          {
+                                            "type": "TextRun",
+                                            "text": "$BRANCH_NAME",
+                                            "fontType": "Monospace",
+                                            "color": "Accent",                                            
+                                            "selectAction": {
+                                                "type": "Action.OpenUrl",
+                                                "url": "%BRANCH_URL"
+                                            }
+                                          },
+                                          {
+                                            "type": "TextRun",
+                                            "text": " into "
+                                          },
+                                          {
+                                            "type": "TextRun",
+                                            "text": "$TARGET_BRANCH",
+                                            "fontType": "Monospace",
+                                            "color": "Accent",                                            
+                                            "selectAction": {
+                                                "type": "Action.OpenUrl",
+                                                "url": "%TARGET_URL"
+                                            }
+                                          }
+                                        ]
                                       }
                                   ]
                               }
@@ -254,10 +283,15 @@ jobs:
           }
           EOF
           ) 
-          
-          curl -X POST "$TEAMS_WEBHOOK_URL" \
+      
+          RESPONSE=$(curl -s -w "%{http_code}" -o response_body.txt -X POST "$TEAMS_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
-            -d "$CARD"
+            -d "$CARD")
+          
+          echo "HTTP Status Code: $RESPONSE"
+          echo "Response Body:"
+          cat response_body.txt
+
 
           echo "✅ Teams notification sent."
 
