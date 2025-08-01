@@ -86,8 +86,7 @@ jobs:
         id: GetGIF
         run: |
           RESPONSE=$(curl -s https://cataas.com/cat/gif?json=true)
-          GIF_PATH=$(echo "$RESPONSE" | jq -r '.url')
-          GIF_URL="https://cataas.com$GIF_PATH"
+          GIF_URL=$(echo "$RESPONSE" | jq -r '.url')
           echo "GIF_URL=$GIF_URL" >> $GITHUB_OUTPUT
 
       - name: Notify Teams with Adaptive Card
