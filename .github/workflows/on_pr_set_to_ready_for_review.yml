@@ -17,12 +17,12 @@ jobs:
         run: |
           PR_URL="${{ github.event.pull_request.html_url }}"
           BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          TARGET_NAME="${{ github.event.pull_request.base.ref }}"
           WORK_ITEM_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+' | head -n 1)
-          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
-          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "target_name=$TARGET_NAME" >> $GITHUB_OUTPUT
           echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
-
           
       - name: Extract Actor Info
         id: extract_actor
@@ -36,12 +36,12 @@ jobs:
           ACTOR_NAME=$(echo "$RESPONSE" | jq -r '.name')
       
           # Fallback to login if name is null
-          if [ "$NAME" = "null" ]; then
-            NAME="$ACTOR"
+          if [ "$ACTOR_NAME" = "null" ]; then
+            ACTOR_NAME="$ACTOR"
           fi
       
-          echo "name=$NAME" >> $GITHUB_OUTPUT
-          echo "avatar_url=$AVATAR_URL" >> $GITHUB_OUTPUT
+          echo "actor_name=$ACTOR_NAME" >> $GITHUB_OUTPUT
+          echo "actor_avatar_url=$ACTOR_AVATAR_URL" >> $GITHUB_OUTPUT
 
 
       - name: Update Azure DevOps work item state and add PR comment
@@ -87,7 +87,7 @@ jobs:
         run: |
           RESPONSE=$(curl -s https://cataas.com/cat/gif?json=true)
           GIF_URL=$(echo "$RESPONSE" | jq -r '.url')
-          echo "GIF_URL=$GIF_URL" >> $GITHUB_OUTPUT
+          echo "gif_url=$GIF_URL" >> $GITHUB_OUTPUT
 
       - name: Notify Teams with Adaptive Card
         if: steps.extract_PR.outputs.work_item_id != ''
@@ -98,24 +98,20 @@ jobs:
 
           PR_URL="${{ steps.extract_PR.outputs.pr_url }}"
           REPO_NAME="${{ github.event.repository.name }}"
-          BRANCH_NAME="${{ steps.extract_PR.outputs.branch }}"         
-          TARGET_NAME="${{ steps.extract_PR.outputs.target_branch }}"
-          WORK_ITEM_ID="${{ steps.extract_PR.outputs.work_item_id }}"
-          GIF_URL= "${{ steps.GetGIF.outputs.GIF_URL }}"
+          BRANCH_NAME="${{ steps.extract_PR.outputs.branch_name }}"      
+          BRANCH_URL="https://github.com/$REPO/tree/$BRANCH_NAME"
+          TARGET_NAME="${{ steps.extract_PR.outputs.target_name }}"
+          TARGET_BRANCH_URL="https://github.com/$REPO/tree/$TARGET_BRANCH"
+
           ACTOR_NAME ="${{ steps.extract_actor.outputs.actor_name }}"
           ACTOR_AVATAR_URK ="${{ steps.extract_actor.outputs.actor_avatar_url }}"
 
-          BRANCH_URL="https://github.com/$REPO/tree/$BRANCH_NAME"
-          TARGET_BRANCH_URL="https://github.com/$REPO/tree/$TARGET_BRANCH"
+          GIF_URL= "${{ steps.GetGIF.outputs.gif_url }}"
           
           ORG="${{ vars.AZURE_DEVOPS_ORG }}"
           PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
+          WORK_ITEM_ID="${{ steps.extract_PR.outputs.work_item_id }}"
           WORK_ITEM_URL="https://dev.azure.com/$ORG/$PROJECT/_workitems/edit/$WORK_ITEM_ID"
-
-          echo "📦 PR URL: $PR_URL"
-          echo "🌿 Branch: $BRANCH_NAME"
-          echo "🧩 Work Item ID: $WORK_ITEM_ID"
-          echo "🔗 Work Item URL: $WORK_ITEM_URL"
           
           CARD=$(cat <<EOF
           {
@@ -172,7 +168,7 @@ jobs:
                                             "color": "Accent",                                            
                                             "selectAction": {
                                                 "type": "Action.OpenUrl",
-                                                "url": "%BRANCH_URL"
+                                                "url": "$BRANCH_URL"
                                             }
                                           },
                                           {
@@ -186,7 +182,7 @@ jobs:
                                             "color": "Accent",                                            
                                             "selectAction": {
                                                 "type": "Action.OpenUrl",
-                                                "url": "%TARGET_URL"
+                                                "url": "$TARGET_URL"
                                             }
                                           }
                                         ]
