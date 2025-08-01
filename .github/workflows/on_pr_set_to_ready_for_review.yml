@@ -105,7 +105,7 @@ jobs:
           BRANCH_NAME="${{ steps.extract_PR.outputs.branch_name }}"      
           BRANCH_URL="https://github.com/$REPO/tree/$BRANCH_NAME"
           TARGET_NAME="${{ steps.extract_PR.outputs.target_name }}"
-          TARGET_URL="https://github.com/$REPO/tree/$TARGET_BRANCH"
+          TARGET_URL="https://github.com/$REPO/tree/$TARGET_NAME"
 
           ACTOR_NAME="${{ steps.extract_actor.outputs.actor_name }}"
           ACTOR_AVATAR_URL="${{ steps.extract_actor.outputs.actor_avatar_url }}"
