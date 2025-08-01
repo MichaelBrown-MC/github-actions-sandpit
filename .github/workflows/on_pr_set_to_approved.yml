@@ -57,7 +57,7 @@ jobs:
           
           # Unassign user from work item
           echo "Unassigning user from work item..."
-          UNASSIGN_PATCH=$(jq -n '[{ "op": "add", "path": "/fields/System.AssignedTo", "value": null }]')
+          UNASSIGN_PATCH=$(jq -n '[{ "op": "remove", "path": "/fields/System.AssignedTo" }]')
           curl -X PATCH \
             -u ":$AZURE_DEVOPS_PAT" \
             -H "Content-Type: application/json-patch+json" \
