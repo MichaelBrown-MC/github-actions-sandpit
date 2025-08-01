@@ -86,7 +86,9 @@ jobs:
         id: GetGIF
         run: |
           RESPONSE=$(curl -s https://cataas.com/cat/gif?json=true)
-          GIF_URL="https://cataas.com${{ echo "$RESPONSE" | jq -r '.url' }}"
+          GIF_PATH=$(echo "$RESPONSE" | jq -r '.url')
+          GIF_URL="https://cataas.com$GIF_PATH"
+          echo "GIF_URL=$GIF_URL" >> $GITHUB_OUTPUT
 
       - name: Notify Teams with Adaptive Card
         if: steps.extract_PR.outputs.work_item_id != ''
