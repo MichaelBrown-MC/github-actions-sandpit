@@ -57,39 +57,40 @@ jobs:
         run: |
           ACTOR="${{ steps.actor.outputs.actor }}"
           BRANCH_NAME="${{ steps.extract.outputs.branch_name }}"
-          REPO="${{ github.repository }}"
-          REPO_URL="https://github.com/$REPO"  
-          BRANCH_URL="https://github.com/$REPO/tree/$BRANCH_NAME"
-          PR_URL="${{ steps.create_pr.outputs.pr_url }}"
-          
           WORK_ITEM_ID="${{ steps.extract.outputs.work_item_id }}"
-
-          COMMENT_HTML="<ul><li>🌱 Branch '<a href='$BRANCH_URL'>$BRANCH_NAME</a>' has been created by <a href="https://github.com/$ACTOR">$ACTOR</a>.</li><li><a href=\"$PR_URL\">Draft Pull Request</a> has been created.</li></ul><br/><small>- Comment created by GitHub Action 🤖</small>"
-
+          REPO="${{ github.repository }}"
+          BRANCH_URL="https://github.com/$REPO/tree/$BRANCH_NAME"
+          PR_URL="${{ steps.create_pr.outputs.pr_url }}"      
+          COMMENT_HTML="<ul><li>🌱 Branch '<a href='$BRANCH_URL'>$BRANCH_NAME</a>' has been created by <a href='https://github.com/$ACTOR'>$ACTOR</a>.</li><li><a href=\"$PR_URL\">Draft Pull Request</a> has been created.</li></ul><br/><small>- Comment created by GitHub Action 🤖</small>"
+      
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
             -H "Content-Type: application/json" \
             -d "$(jq -n --arg text "$COMMENT_HTML" '{text: $text}')" \
-            "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workItems/${{ steps.extract.outputs.work_item_id }}/comments?api-version=7.1-preview.3"
-
-
-          # Set the branch name in the work item
+            "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workItems/$WORK_ITEM_ID/comments?api-version=7.1-preview.3"
+      
+      - name: Set branch name in Azure DevOps work item
+        if: steps.extract.outputs.work_item_id != ''
+        env:
+          AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+        run: |
+          BRANCH_NAME="${{ steps.extract.outputs.branch_name }}"
+          WORK_ITEM_ID="${{ steps.extract.outputs.work_item_id }}"      
           echo "Setting branch name '$BRANCH_NAME' on work item $WORK_ITEM_ID..."
-          
+      
           PATCH_BRANCH=$(cat <<EOF
-          [
-            {
-              "op": "add",
-              "path": "/fields/Custom.Branch",
-              "value": "$BRANCH_NAME"
-            }
-          ]
+              [
+                {
+                  "op": "add",
+                  "path": "/fields/Custom.Branch",
+                  "value": "$BRANCH_NAME"
+                }
+              ]
           EOF
           )
-          
+      
           curl -X PATCH \
             -u ":$AZURE_DEVOPS_PAT" \
             -H "Content-Type: application/json-patch+json" \
             -d "$PATCH_BRANCH" \
             "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
-
