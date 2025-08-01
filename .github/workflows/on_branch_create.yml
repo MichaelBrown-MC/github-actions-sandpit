@@ -61,7 +61,7 @@ jobs:
           REPO="${{ github.repository }}"
           BRANCH_URL="https://github.com/$REPO/tree/$BRANCH_NAME"
           PR_URL="${{ steps.create_pr.outputs.pr_url }}"      
-          COMMENT_HTML="<ul><li>🌱 Branch '<a href='$BRANCH_URL'>$BRANCH_NAME</a>' has been created by <a href='https://github.com/$ACTOR'>$ACTOR</a>.</li><li><a href=\"$PR_URL\">Draft Pull Request</a> has been created.</li></ul><br/><small>- Comment created by GitHub Action 🤖</small>"
+          COMMENT_HTML="<ul><li>🌱 Branch '<a href='$BRANCH_URL'>$BRANCH_NAME</a>' has been created by <a href='https://github.com/$ACTOR'>$ACTOR</a>.</li><li><a href=\"$PR_URL\">Draft Pull Request</a> has been created.</li><li>User Story Branch field set to '$BRANCH_NAME'.</li></ul><br/><small>- Comment created by GitHub Action 🤖</small>"
       
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
