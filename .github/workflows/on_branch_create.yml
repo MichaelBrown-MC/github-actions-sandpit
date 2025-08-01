@@ -40,7 +40,7 @@ jobs:
             --base main \
             --head "$BRANCH_NAME" \
             --title "$BRANCH_NAME" \
-            --body "Linked Azure DevOps User Story: $WORK_ITEM_URL" \
+            --body "DevOps User Story: $WORK_ITEM_URL" \
             --draft
 
           PR_URL=$(gh pr view "$BRANCH_NAME" --json url --jq .url)
