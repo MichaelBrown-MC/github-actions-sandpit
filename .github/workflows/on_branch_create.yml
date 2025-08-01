@@ -61,6 +61,9 @@ jobs:
           REPO_URL="https://github.com/$REPO"  
           BRANCH_URL="https://github.com/$REPO/tree/$BRANCH_NAME"
           PR_URL="${{ steps.create_pr.outputs.pr_url }}"
+          
+          WORK_ITEM_ID="${{ steps.extract.outputs.work_item_id }}"
+
           COMMENT_HTML="<ul><li>🌱 Branch '<a href='$BRANCH_URL'>$BRANCH_NAME</a>' has been created by <a href="https://github.com/$ACTOR">$ACTOR</a>.</li><li><a href=\"$PR_URL\">Draft Pull Request</a> has been created.</li></ul><br/><small>- Comment created by GitHub Action 🤖</small>"
 
           curl -X POST \
