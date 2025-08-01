@@ -68,3 +68,15 @@ jobs:
             -H "Content-Type: application/json" \
             -d "$(jq -n --arg text "$COMMENT_HTML" '{text: $text}')" \
             "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workItems/${{ steps.extract.outputs.work_item_id }}/comments?api-version=7.1-preview.3"
+
+
+          # Set the branch name in the work item
+          echo "Setting branch name '$BRANCH_NAME' on work item $WORK_ITEM_ID..."
+          PATCH_BRANCH=$(jq -n --arg branch "$BRANCH_NAME" '[{ "op": "add", "path": "/fields/Custom.Branch", "value": $branch }]')
+          
+          curl -X PATCH \
+            -u ":$AZURE_DEVOPS_PAT" \
+            -H "Content-Type: application/json-patch+json" \
+            -d "$PATCH_BRANCH" \
+            "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
+
