@@ -1,0 +1,74 @@
+name: On PR set to Approved
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  on-pr-set-to-approved:
+    if: github.event.review.state == 'approved'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract PR info
+        id: extract_PR
+        run: |
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          WORK_ITEM_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+' | head -n 1)
+          APPROVER_NAME="${{ github.event.review.user.login }}"
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
+          echo "approver_name=$APPROVER_NAME" >> $GITHUB_OUTPUT
+          
+      - name: Update Azure DevOps work item state and add comment
+        if: steps.extract_PR.outputs.work_item_id != ''
+        env:
+          AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+        run: |
+          WORK_ITEM_ID="${{ steps.extract_PR.outputs.work_item_id }}"
+          ORG="${{ vars.AZURE_DEVOPS_ORG }}"
+          PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
+          APPROVER_NAME="${{ steps.extract_PR.approver_name }}"
+          
+          # Get current state of the work item
+          CURRENT_STATE=$(curl -s -u ":$AZURE_DEVOPS_PAT" \
+            -H "Accept: application/json" \
+            "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3" \
+            | jq -r '.fields["System.State"]')
+
+          echo "Current state: $CURRENT_STATE"
+
+          if [ "$CURRENT_STATE" != "Ready For Testing" ]; then
+            echo "Updating state to 'Ready for Testing'..."
+            PATCH_DATA=$(jq -n '[{ "op": "add", "path": "/fields/System.State", "value": "Ready For Testing" }]')          
+            curl -X PATCH \
+              -u ":$AZURE_DEVOPS_PAT" \
+              -H "Content-Type: application/json-patch+json" \
+              -d "$PATCH_DATA" \
+              "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
+          else
+            echo "Work item already in 'Ready For Testing' state. Skipping update."
+          fi
+          
+          # Unassign user from work item
+          echo "Unassigning user from work item..."
+          UNASSIGN_PATCH=$(jq -n '[{ "op": "remove", "path": "/fields/System.AssignedTo" }]')
+          curl -X PATCH \
+            -u ":$AZURE_DEVOPS_PAT" \
+            -H "Content-Type: application/json-patch+json" \
+            -d "$UNASSIGN_PATCH" \
+            "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
+
+          # Add comment          
+          COMMENT_HTML="Pull Request has been approved by $APPROVER_NAME.<br/><br/>User Story state set to 'Ready for Testing'<br/><br/><small>- Comment created by GitHub Action 🤖</small>"
+          
+          curl -X POST \
+            -u ":$AZURE_DEVOPS_PAT" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg text "$COMMENT_HTML" '{text: $text}')" \
+            "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workItems/$WORK_ITEM_ID/comments?api-version=7.1-preview.3"
