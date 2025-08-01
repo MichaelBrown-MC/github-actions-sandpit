@@ -58,7 +58,7 @@ jobs:
           ACTOR="${{ steps.actor.outputs.actor }}"
           BRANCH_NAME="${{ steps.extract.outputs.branch }}"
           PR_URL="${{ steps.create_pr.outputs.pr_url }}"
-          COMMENT_HTML="🌱 Branch '<strong>$BRANCH_NAME</strong>' was created by <a href="https://github.com/$ACTOR">$ACTOR</a>.<br/><br/>View Draft Pull Request: <a href=\"$PR_URL\">$PR_URL</a><br/><br/><small>- Comment created by GitHub Action 🤖</small>"
+          COMMENT_HTML="<ul><li>🌱 Branch '<strong>$BRANCH_NAME</strong>' has been created by <a href="https://github.com/$ACTOR">$ACTOR</a>.</li><li><a href=\"$PR_URL\">Draft Pull Request</a> has been created.</li></ul><br/><br/><small>- Comment created by GitHub Action 🤖</small>"
 
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
