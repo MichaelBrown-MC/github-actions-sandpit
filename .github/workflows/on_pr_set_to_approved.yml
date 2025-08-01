@@ -25,8 +25,8 @@ jobs:
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
           echo "approver_name=$APPROVER_NAME" >> $GITHUB_OUTPUT
-          
-      - name: Update Azure DevOps work item state and add comment
+
+      - name: Update work item state to 'Ready For Testing'
         if: steps.extract_PR.outputs.work_item_id != ''
         env:
           AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
@@ -34,10 +34,7 @@ jobs:
           WORK_ITEM_ID="${{ steps.extract_PR.outputs.work_item_id }}"
           ORG="${{ vars.AZURE_DEVOPS_ORG }}"
           PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
-          APPROVER_NAME="${{ steps.extract_PR.outputs.approver_name }}"
-          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
           
-          # Get current state of the work item
           CURRENT_STATE=$(curl -s -u ":$AZURE_DEVOPS_PAT" \
             -H "Accept: application/json" \
             "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3" \
@@ -46,19 +43,23 @@ jobs:
           echo "Current state: $CURRENT_STATE"
 
           if [ "$CURRENT_STATE" != "Ready For Testing" ]; then
-            echo "Updating state to 'Ready for Testing'..."
             PATCH_DATA=$(jq -n '[{ "op": "add", "path": "/fields/System.State", "value": "Ready For Testing" }]')          
             curl -X PATCH \
               -u ":$AZURE_DEVOPS_PAT" \
               -H "Content-Type: application/json-patch+json" \
               -d "$PATCH_DATA" \
               "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
-          else
-            echo "Work item already in 'Ready For Testing' state. Skipping update."
           fi
-          
-          # Unassign user from work item
-          echo "Unassigning user from work item..."
+
+      - name: Unassign user from work item
+        if: steps.extract_PR.outputs.work_item_id != ''
+        env:
+          AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+        run: |
+          WORK_ITEM_ID="${{ steps.extract_PR.outputs.work_item_id }}"
+          ORG="${{ vars.AZURE_DEVOPS_ORG }}"
+          PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
+
           UNASSIGN_PATCH=$(jq -n '[{ "op": "remove", "path": "/fields/System.AssignedTo" }]')
           curl -X PATCH \
             -u ":$AZURE_DEVOPS_PAT" \
@@ -66,9 +67,19 @@ jobs:
             -d "$UNASSIGN_PATCH" \
             "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
 
-          # Add comment          
-          COMMENT_HTML="<ul><li>✅ Pull Request has been approved by <a href="https://github.com/$APPROVER_NAME">$APPROVER_NAME</a>.</li><li>User Story State set to '🟣 Ready for Testing'.</li><li>User Story Assignee has been unassigned.</li><li>$BRANCH_NAME</li></ul><br><small>- Comment created by GitHub Action 🤖</small>"
-          
+      - name: Add comment to work item
+        if: steps.extract_PR.outputs.work_item_id != ''
+        env:
+          AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+        run: |
+          WORK_ITEM_ID="${{ steps.extract_PR.outputs.work_item_id }}"
+          ORG="${{ vars.AZURE_DEVOPS_ORG }}"
+          PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
+          APPROVER_NAME="${{ steps.extract_PR.outputs.approver_name }}"
+          BRANCH_NAME="${{ steps.extract_PR.outputs.branch_name }}"
+
+          COMMENT_HTML="<ul><li>✅ Pull Request has been approved by <a href=\"https://github.com/$APPROVER_NAME\">$APPROVER_NAME</a>.</li><li>User Story State set to '🟣 Ready for Testing'.</li><li>User Story Assignee has been unassigned.</li><li>$BRANCH_NAME</li></ul><br><small>- Comment created by GitHub Action 🤖</small>"
+
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
             -H "Content-Type: application/json" \
