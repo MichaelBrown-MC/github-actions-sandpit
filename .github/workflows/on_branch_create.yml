@@ -19,7 +19,7 @@ jobs:
           BRANCH_NAME="${GITHUB_REF#refs/heads/}"
           echo "Branch name: $BRANCH_NAME"
           WORK_ITEM_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+' | head -n 1)
-          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
       
       - name: Capture GitHub actor (branch creator)
@@ -56,9 +56,12 @@ jobs:
           AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
         run: |
           ACTOR="${{ steps.actor.outputs.actor }}"
-          BRANCH_NAME="${{ steps.extract.outputs.branch }}"
+          BRANCH_NAME="${{ steps.extract.outputs.branch_name }}"
+          REPO="${{ github.repository }}"
+          REPO_URL="https://github.com/$REPO"  
+          BRANCH_URL="https://github.com/$REPO/tree/$BRANCH_NAME"
           PR_URL="${{ steps.create_pr.outputs.pr_url }}"
-          COMMENT_HTML="<ul><li>🌱 Branch '<strong>$BRANCH_NAME</strong>' has been created by <a href="https://github.com/$ACTOR">$ACTOR</a>.</li><li><a href=\"$PR_URL\">Draft Pull Request</a> has been created.</li></ul><br/><br/><small>- Comment created by GitHub Action 🤖</small>"
+          COMMENT_HTML="<ul><li>🌱 Branch '<a href='$BRANCH_URL'>$BRANCH_NAME</a>' has been created by <a href="https://github.com/$ACTOR">$ACTOR</a>.</li><li><a href=\"$PR_URL\">Draft Pull Request</a> has been created.</li></ul><br/><small>- Comment created by GitHub Action 🤖</small>"
 
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
