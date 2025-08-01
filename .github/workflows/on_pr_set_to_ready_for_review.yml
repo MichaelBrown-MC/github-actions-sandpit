@@ -103,10 +103,10 @@ jobs:
           TARGET_NAME="${{ steps.extract_PR.outputs.target_name }}"
           TARGET_BRANCH_URL="https://github.com/$REPO/tree/$TARGET_BRANCH"
 
-          ACTOR_NAME ="${{ steps.extract_actor.outputs.actor_name }}"
-          ACTOR_AVATAR_URK ="${{ steps.extract_actor.outputs.actor_avatar_url }}"
+          ACTOR_NAME="${{ steps.extract_actor.outputs.actor_name }}"
+          ACTOR_AVATAR_URK="${{ steps.extract_actor.outputs.actor_avatar_url }}"
 
-          GIF_URL= "${{ steps.GetGIF.outputs.gif_url }}"
+          GIF_URL="${{ steps.GetGIF.outputs.gif_url }}"
           
           ORG="${{ vars.AZURE_DEVOPS_ORG }}"
           PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
@@ -127,7 +127,7 @@ jobs:
                   "body": [
                       {
                           "type": "Image",
-                          "url": "$GIF_URL?position=center",
+                          "url": "$GIF_URL",
                           "style": "RoundedCorners"
                       },
                       {
