@@ -28,9 +28,10 @@ jobs:
       - name: Extract actor info
         id: extract_actor
         run: |
-          ACTOR=$(jq -r '.login' actor.json)
-          ACTOR_AVATAR_URL=$(jq -r '.avatar_url' actor.json)
-          ACTOR_NAME=$(jq -r '.name' actor.json)
+          ACTOR="${{ github.actor }}"
+          RESPONSE=$(curl -s https://api.github.com/users/$ACTOR)
+          ACTOR_AVATAR_URL=$(echo "$RESPONSE" | jq -r '.avatar_url')
+          ACTOR_NAME=$(echo "$RESPONSE" | jq -r '.name')
           if [ "$ACTOR_NAME" = "null" ]; then
             ACTOR_NAME="$ACTOR"
           fi
