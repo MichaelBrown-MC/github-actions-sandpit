@@ -75,7 +75,7 @@ jobs:
           fi
 
           # Add comment with PR link
-          COMMENT_HTML="🔍 Pull Request is Ready for Code Review: <a href=\"$PR_URL/files\">$PR_URL</a><br/><br/>User Story State set to '🔵 Ready for Code Review'<br/><br/><small>- Comment created by GitHub Action 🤖</small>"
+          COMMENT_HTML="<ul><li>🔍 <a href=\"$PR_URL/files\">Pull Request</a> is Ready for Code Review.</li><li>User Story State set to '🔵 Ready for Code Review'.</li></ul><br/><small>- Comment created by GitHub Action 🤖</small>"
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
             -H "Content-Type: application/json" \
