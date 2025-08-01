@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extract PR info
-        id: extract
+        id: extract_PR
         run: |
           PR_URL="${{ github.event.pull_request.html_url }}"
           BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
@@ -22,13 +22,34 @@ jobs:
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
 
+          
+      - name: Extract Actor Info
+        id: extract_actor
+        run: |
+          ACTOR="${{ github.actor }}"
+          echo "Actor: $ACTOR"
+      
+          # Fetch user details from GitHub API
+          RESPONSE=$(curl -s https://api.github.com/users/$ACTOR)
+          ACTOR_AVATAR_URL=$(echo "$RESPONSE" | jq -r '.avatar_url')
+          ACTOR_NAME=$(echo "$RESPONSE" | jq -r '.name')
+      
+          # Fallback to login if name is null
+          if [ "$NAME" = "null" ]; then
+            NAME="$ACTOR"
+          fi
+      
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          echo "avatar_url=$AVATAR_URL" >> $GITHUB_OUTPUT
+
+
       - name: Update Azure DevOps work item state and add PR comment
-        if: steps.extract.outputs.work_item_id != ''
+        if: steps.extract_PR.outputs.work_item_id != ''
         env:
           AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
         run: |
-          WORK_ITEM_ID="${{ steps.extract.outputs.work_item_id }}"
-          PR_URL="${{ steps.extract.outputs.pr_url }}"
+          WORK_ITEM_ID="${{ steps.extract_PR.outputs.work_item_id }}"
+          PR_URL="${{ steps.extract_PR.outputs.pr_url }}"
           ORG="${{ vars.AZURE_DEVOPS_ORG }}"
           PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
 
@@ -60,17 +81,27 @@ jobs:
             -d "$(jq -n --arg text "$COMMENT_HTML" '{text: $text}')" \
             "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workItems/$WORK_ITEM_ID/comments?api-version=7.1-preview.3"
 
+      - name: Get GIF URL
+        id: GetGIF
+        run: |
+          RESPONSE=$(curl -s https://cataas.com/cat/gif?json=true)
+          GIF_URL="https://cataas.com${{ echo "$RESPONSE" | jq -r '.url' }}"
 
       - name: Notify Teams with Adaptive Card
-        if: steps.extract.outputs.work_item_id != ''
+        if: steps.extract_PR.outputs.work_item_id != ''
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.PULL_REQUESTS_TEAMS_WEBHOOK_URL }}
         run: |
           echo "🔧 Preparing Teams notification..."
 
-          PR_URL="${{ steps.extract.outputs.pr_url }}"
-          BRANCH_NAME="${{ steps.extract.outputs.branch }}"
-          WORK_ITEM_ID="${{ steps.extract.outputs.work_item_id }}"
+          PR_URL="${{ steps.extract_PR.outputs.pr_url }}"
+          BRANCH_NAME="${{ steps.extract_PR.outputs.branch }}"
+          WORK_ITEM_ID="${{ steps.extract_PR.outputs.work_item_id }}"
+          GIF_URL= "${{ steps.GetGIF.outputs.GIF_URL }}"
+          ACTOR_NAME = "${{ steps.extract_actor.outputs.actor_name }}"
+          ACTOR_AVATAR_URK =  "${{ steps.extract_actor.outputs.actor_avatar_url }}"
+          REPO_NAME="${{ github.event.repository.name }}"
+          
           ORG="${{ vars.AZURE_DEVOPS_ORG }}"
           PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
           WORK_ITEM_URL="https://dev.azure.com/$ORG/$PROJECT/_workitems/edit/$WORK_ITEM_ID"
@@ -87,38 +118,142 @@ jobs:
               {
                 "contentType": "application/vnd.microsoft.card.adaptive",
                 "content": {
-                  "\$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
                   "type": "AdaptiveCard",
+                  "speak": "3 minute energy flow with kayo video",
+                  "$schema": "https://adaptivecards.io/schemas/adaptive-card.json",
                   "version": "1.5",
                   "body": [
-                    {
-                      "type": "TextBlock",
-                      "text": "$BRANCH_NAME"
-                    },
-                    {
-                      "type": "TextBlock",
-                      "text": "Pull Request is ready for Code Review",
-                      "wrap": true
-                    }
-                  ],
-                  "actions": [
-                    {
-                      "type": "Action.OpenUrl",
-                      "title": "View Pull Request",
-                      "url": "$PR_URL"
-                    },
-                    {
-                      "type": "Action.OpenUrl",
-                      "title": "View User Story #$WORK_ITEM_ID",
-                      "url": "$WORK_ITEM_URL"
-                    }
+                      {
+                          "type": "Image",
+                          "url": "$GIF_URL?position=center",
+                          "style": "RoundedCorners"
+                      },
+                      {
+                          "type": "TextBlock",
+                          "text": "Pull Request Ready for Review",
+                          "wrap": true,
+                          "size": "Large",
+                          "weight": "Bolder"
+                      },
+                      {
+                          "type": "ColumnSet",
+                          "columns": [
+                              {
+                                  "type": "Column",
+                                  "width": "auto",
+                                  "verticalContentAlignment": "Center",
+                                  "items": [
+                                      {
+                                          "type": "Icon",
+                                          "name": "Branch",
+                                          "size": "Small"
+                                      }
+                                  ]
+                              },
+                              {
+                                  "type": "Column",
+                                  "width": "stretch",
+                                  "spacing": "Small",
+                                  "verticalContentAlignment": "Center",
+                                  "items": [
+                                      {
+                                          "type": "TextBlock",
+                                          "text": "$BRANCH_NAME",
+                                          "wrap": true
+                                      }
+                                  ]
+                              }
+                          ]
+                      },
+                      {
+                          "type": "ColumnSet",
+                          "columns": [
+                              {
+                                  "type": "Column",
+                                  "width": "auto",
+                                  "verticalContentAlignment": "Center",
+                                  "items": [
+                                      {
+                                          "type": "Icon",
+                                          "name": "Home",
+                                          "size": "Small"
+                                      }
+                                  ]
+                              },
+                              {
+                                  "type": "Column",
+                                  "width": "stretch",
+                                  "spacing": "Small",
+                                  "verticalContentAlignment": "Center",
+                                  "items": [
+                                      {
+                                          "type": "TextBlock",
+                                          "text": "$REPO_NAME",
+                                          "wrap": true
+                                      }
+                                  ]
+                              }
+                          ]
+                      },
+                      {
+                          "type": "ColumnSet",
+                          "columns": [
+                              {
+                                  "type": "Column",
+                                  "width": "auto",
+                                  "verticalContentAlignment": "Center",
+                                  "items": [
+                                      {
+                                          "type": "Image",
+                                          "url": "$ACTOR_AVATAR_URL",
+                                          "width": "24px",
+                                          "height": "24px",
+                                          "style": "Person",
+                                          "altText": "By $ACTOR_NAME"
+                                      }
+                                  ]
+                              },
+                              {
+                                  "type": "Column",
+                                  "width": "stretch",
+                                  "spacing": "Small",
+                                  "verticalContentAlignment": "Center",
+                                  "items": [
+                                      {
+                                          "type": "TextBlock",
+                                          "text": "By $ACTOR_NAME",
+                                          "wrap": true
+                                      }
+                                  ]
+                              }
+                          ]
+                      },
+                      {
+                          "type": "ActionSet",
+                          "actions": [
+                              {
+                                  "type": "Action.OpenUrl",
+                                  "title": "User Story #$WORK_ITEM_ID",
+                                  "url": "$WORK_ITEM_URL",
+                                  "iconUrl": "icon:BookOpen"
+                              },
+                              {
+                                  "type": "Action.OpenUrl",
+                                  "title": "View Pull Request",
+                                  "url": "$PR_URL",
+                                  "iconUrl": "icon:CodeBlock"
+                              }
+                          ],
+                          "horizontalAlignment": "Left"
+                      }
                   ]
+                  
                 }
               }
             ]
           }
           EOF
-          )
+          ) 
           
           curl -X POST "$TEAMS_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
