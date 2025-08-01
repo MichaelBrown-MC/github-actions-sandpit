@@ -97,11 +97,15 @@ jobs:
           echo "🔧 Preparing Teams notification..."
 
           PR_URL="${{ steps.extract_PR.outputs.pr_url }}"
-          REPO_NAME="${{ github.event.repository.name }}"
+          REPO_NAME="${{ github.event.repository.name }}"          
+          REPO="${{ github.repository }}"
+          REPO_URL="https://github.com/$REPO"
+
+
           BRANCH_NAME="${{ steps.extract_PR.outputs.branch_name }}"      
           BRANCH_URL="https://github.com/$REPO/tree/$BRANCH_NAME"
           TARGET_NAME="${{ steps.extract_PR.outputs.target_name }}"
-          TARGET_BRANCH_URL="https://github.com/$REPO/tree/$TARGET_BRANCH"
+          TARGET_URL="https://github.com/$REPO/tree/$TARGET_BRANCH"
 
           ACTOR_NAME="${{ steps.extract_actor.outputs.actor_name }}"
           ACTOR_AVATAR_URL="${{ steps.extract_actor.outputs.actor_avatar_url }}"
@@ -147,7 +151,7 @@ jobs:
                                   "items": [
                                       {
                                           "type": "Icon",
-                                          "name": "Branch",
+                                          "name": "BranchRequest",
                                           "size": "Small"
                                       }
                                   ]
@@ -177,7 +181,7 @@ jobs:
                                           },
                                           {
                                             "type": "TextRun",
-                                            "text": "$TARGET_BRANCH",
+                                            "text": "$TARGET_NAME",
                                             "fontType": "Monospace",
                                             "color": "Accent",                                            
                                             "selectAction": {
@@ -211,13 +215,22 @@ jobs:
                                   "width": "stretch",
                                   "spacing": "Small",
                                   "verticalContentAlignment": "Center",
-                                  "items": [
+                                  "items": [                                      
                                       {
-                                          "type": "TextBlock",
-                                          "text": "$REPO_NAME",
-                                          "wrap": true
+                                        "type": "RichTextBlock",
+                                        "inlines": [
+                                          {
+                                            "type": "TextRun",
+                                            "text": "$REPO_NAME",
+                                            "color": "Accent",
+                                            "selectAction": {
+                                              "type": "Action.OpenUrl",
+                                              "url": "$REPO_URL"
+                                            }
+                                          }
+                                        ]
                                       }
-                                  ]
+                                  ]                            
                               }
                           ]
                       },
