@@ -20,6 +20,7 @@ jobs:
           BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
           WORK_ITEM_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+' | head -n 1)
           APPROVER_NAME="${{ github.event.review.user.login }}"
+          
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
@@ -33,7 +34,7 @@ jobs:
           WORK_ITEM_ID="${{ steps.extract_PR.outputs.work_item_id }}"
           ORG="${{ vars.AZURE_DEVOPS_ORG }}"
           PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
-          APPROVER_NAME="${{ steps.extract_PR.approver_name }}"
+          APPROVER_NAME="${{ steps.extract_PR.outputs.approver_name }}"
           
           # Get current state of the work item
           CURRENT_STATE=$(curl -s -u ":$AZURE_DEVOPS_PAT" \
@@ -65,7 +66,7 @@ jobs:
             "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
 
           # Add comment          
-          COMMENT_HTML="Pull Request has been approved by $APPROVER_NAME.<br/><br/>User Story state set to 'Ready for Testing'<br/><br/><small>- Comment created by GitHub Action 🤖</small>"
+          COMMENT_HTML="✅ Pull Request has been approved by <a href="https://github.com/$APPROVER_NAME">$APPROVER_NAME</a>.<br/><br/>User Story State set to '🟣 Ready for Testing'<br/><br/><small>- Comment created by GitHub Action 🤖</small>"
           
           curl -X POST \
             -u ":$AZURE_DEVOPS_PAT" \
