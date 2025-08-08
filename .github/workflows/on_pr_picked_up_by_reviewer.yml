@@ -64,7 +64,7 @@ jobs:
 
             CURRENT_STATE=$(curl -s -u ":$AZURE_DEVOPS_PAT" \
             -H "Accept: application/json" \
-            "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3" \
+            "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3" \
             | jq -r '.fields["System.State"]')
 
             echo "Current state: $CURRENT_STATE"
