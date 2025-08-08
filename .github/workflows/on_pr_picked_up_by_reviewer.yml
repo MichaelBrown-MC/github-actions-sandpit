@@ -84,9 +84,9 @@ jobs:
           run: |
             WORK_ITEM_ID="${{ steps.extract_workitemid.outputs.work_item_id }}"   
             ASSIGNEE_EMAIL="${{ steps.extract_assigneeemail.outputs.assignee_email }}"      
-              ORG="${{ vars.AZURE_DEVOPS_ORG }}"
-              PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
-              COMMENT_HTML="<ul><li>✋ User Story Assignee has been assignedd to $ASSIGNEE_EMAIL.</li><li>User Story State set to '🔵 In Code Review'.</li></ul><br><small>- Comment created by GitHub Action 🤖</small>"
+            ORG="${{ vars.AZURE_DEVOPS_ORG }}"
+            PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
+            COMMENT_HTML="<ul><li>✋ User Story Assignee has been assignedd to $ASSIGNEE_EMAIL.</li><li>User Story State set to '🔵 In Code Review'.</li></ul><br><small>- Comment created by GitHub Action 🤖</small>"
     
             curl -X POST \
               -u ":$AZURE_DEVOPS_PAT" \
