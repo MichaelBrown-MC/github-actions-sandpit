@@ -1,0 +1,73 @@
+name: On PR picked up by reviewer
+
+on:
+  pull_request:
+    types:
+      - edited
+
+jobs:
+  on_pr_picked_up_by_reviewer:
+      if: github.event.changes.body != null
+      runs-on: ubuntu-latest
+      steps:
+      
+        - name: Extract email from PR body
+          id: extract_assigneeemail
+          env:
+            PR_BODY: ${{ github.event.pull_request.body }}
+          run: |
+            echo "PR body:"
+            echo "$PR_BODY"
+  
+            # Extract the email from the [assigned-reviewer] tag
+            EMAIL=$(echo "$PR_BODY" | grep -i '\[assigned-reviewer\]:' | grep -Eo '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}')
+            
+            if [ -n "$EMAIL" ]; then
+              echo "✅ Found assigned reviewer email: $EMAIL"
+              echo "assignee_email=$EMAIL" >> $GITHUB_OUTPUT
+            else
+              echo "⚠️ No assigned reviewer email found."
+            fi
+
+        - name: Extract work item ID
+          id: extract_workitemid
+          run: |
+            BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+            echo "Branch name: $BRANCH_NAME"
+            WORK_ITEM_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+' | head -n 1)
+            echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
+
+        - name: Set branch name in Azure DevOps work item
+          if: steps.extract.outputs.work_item_id != ''
+          env:
+            AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+          run: |
+            WORK_ITEM_ID="${{ steps.extract_workitemid.outputs.work_item_id }}"   
+            ASSIGNEE_EMAIL="${{ steps.extract_assigneeemail.outputs.assignee_email }}"      
+            echo "Setting assignee to '$ASSIGNEE_EMAIL' on work item $WORK_ITEM_ID..."
+        
+            PATCH_BRANCH=$(cat <<EOF
+                [
+                  {
+                    "op": "add",
+                    "path": "/fields/System.AssignedTo",
+                    "value": "$ASSIGNEE_EMAIL"
+                  },
+                  {
+                    "op": "add",
+                    "path": "/fields/System.State",
+                    "value": "In Code Review"
+                  }
+                ]
+            EOF
+            )
+        
+            curl -X PATCH \
+              -u ":$AZURE_DEVOPS_PAT" \
+              -H "Content-Type: application/json-patch+json" \
+              -d "$PATCH_BRANCH" \
+              "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
+
+          
+  
+  
