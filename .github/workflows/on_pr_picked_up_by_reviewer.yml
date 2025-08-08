@@ -32,13 +32,13 @@ jobs:
         - name: Extract work item ID
           id: extract_workitemid
           run: |
-            BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+            BRANCH_NAME="${{ github.head_ref }}"
             echo "Branch name: $BRANCH_NAME"
             WORK_ITEM_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+' | head -n 1)
             echo "work_item_id=$WORK_ITEM_ID" >> $GITHUB_OUTPUT
 
-        - name: Set branch name in Azure DevOps work item
-          if: steps.extract.outputs.work_item_id != ''
+        - name: Set assignee in Azure DevOps work item
+          if: steps.extract_workitemid.outputs.work_item_id != ''
           env:
             AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
           run: |
