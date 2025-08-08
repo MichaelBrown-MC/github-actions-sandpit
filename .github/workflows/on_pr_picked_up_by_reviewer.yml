@@ -78,7 +78,7 @@ jobs:
             fi
             
         - name: Add comment to work item
-          if: steps.extract_PR.outputs.work_item_id != ''
+          if: steps.extract_workitemid.outputs.work_item_id != ''
           env:
             AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
           run: |
