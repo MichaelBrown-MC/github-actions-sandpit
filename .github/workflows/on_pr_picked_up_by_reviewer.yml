@@ -45,7 +45,7 @@ jobs:
             WORK_ITEM_ID="${{ steps.extract_workitemid.outputs.work_item_id }}"   
             ASSIGNEE_EMAIL="${{ steps.extract_assigneeemail.outputs.assignee_email }}"      
             echo "Setting assignee to '$ASSIGNEE_EMAIL' on work item $WORK_ITEM_ID..."
-        
+
             PATCH_BRANCH=$(cat <<EOF
                 [
                   {
@@ -61,25 +61,34 @@ jobs:
                 ]
             EOF
             )
-        
-            curl -X PATCH \
-              -u ":$AZURE_DEVOPS_PAT" \
-              -H "Content-Type: application/json-patch+json" \
-              -d "$PATCH_BRANCH" \
-              "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
-              
-            - name: Add comment to work item
-                if: steps.extract_PR.outputs.work_item_id != ''
-                env:
-                  AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
-                run: |
-                  WORK_ITEM_ID="${{ steps.extract_workitemid.outputs.work_item_id }}"   
-                  ASSIGNEE_EMAIL="${{ steps.extract_assigneeemail.outputs.assignee_email }}"      
-                  ORG="${{ vars.AZURE_DEVOPS_ORG }}"
-                  PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
-                  COMMENT_HTML="<ul><li>✋ User Story Assignee has been assignedd to $ASSIGNEE_EMAIL.</li><li>User Story State set to '🔵 In Code Review'.</li></ul><br><small>- Comment created by GitHub Action 🤖</small>"
-        
-                curl -X POST \
+
+            CURRENT_STATE=$(curl -s -u ":$AZURE_DEVOPS_PAT" \
+            -H "Accept: application/json" \
+            "https://dev.azure.com/$ORG/$PROJECT/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3" \
+            | jq -r '.fields["System.State"]')
+
+            echo "Current state: $CURRENT_STATE"
+
+            if [ "$CURRENT_STATE" != "In Code Review" ]; then         
+              curl -X PATCH \
+                -u ":$AZURE_DEVOPS_PAT" \
+                -H "Content-Type: application/json-patch+json" \
+                -d "$PATCH_BRANCH" \
+                "https://dev.azure.com/${{ vars.AZURE_DEVOPS_ORG }}/${{ vars.AZURE_DEVOPS_PROJECT }}/_apis/wit/workitems/$WORK_ITEM_ID?api-version=7.1-preview.3"
+            fi
+            
+        - name: Add comment to work item
+          if: steps.extract_PR.outputs.work_item_id != ''
+          env:
+            AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+          run: |
+            WORK_ITEM_ID="${{ steps.extract_workitemid.outputs.work_item_id }}"   
+            ASSIGNEE_EMAIL="${{ steps.extract_assigneeemail.outputs.assignee_email }}"      
+              ORG="${{ vars.AZURE_DEVOPS_ORG }}"
+              PROJECT="${{ vars.AZURE_DEVOPS_PROJECT }}"
+              COMMENT_HTML="<ul><li>✋ User Story Assignee has been assignedd to $ASSIGNEE_EMAIL.</li><li>User Story State set to '🔵 In Code Review'.</li></ul><br><small>- Comment created by GitHub Action 🤖</small>"
+    
+            curl -X POST \
               -u ":$AZURE_DEVOPS_PAT" \
               -H "Content-Type: application/json" \
               -d "$(jq -n --arg text "$COMMENT_HTML" '{text: $text}')" \
